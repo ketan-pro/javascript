@@ -1,0 +1,113 @@
+<html>
+    <head>
+        <script>
+            function toggle(id) {
+                var ele = document.getElementById(id);
+                ele.style.display = ele.style.display == 'none'? '' : 'none';
+            }
+            function getAsText(readFile, cb) {
+                var reader = new FileReader();
+                reader.readAsText(readFile, "UTF-8");
+                reader.onload = function(evt) {
+                    var fileString = evt.target.result;
+                    cb(fileString);
+                };
+            }
+            
+            function uploadJSON() {
+                var outJson = {};
+                var file = document.getElementById('jsonUpload').files[0];
+                if (file) {
+                    getAsText(file, function(data) {
+                        try {
+                            document.getElementById('output').innerHTML="";
+                            document.getElementById('output2').innerHTML="";
+                            var dupCnt = 0;
+                            var obj = JSON.parse(data);
+                            var flatObj = flatten(obj);
+                            var valObj = {};
+                            Object.keys(flatObj).map(function(key, index) {
+                                var tr = document.createElement('tr');
+                                tr.innerHTML="<td>"+key+"</td><td>"+flatObj[key]+"</td>";
+                                document.getElementById('output').appendChild(tr);
+                                var val = flatObj[key];
+                                var valExists = false;
+                                Object.keys(valObj).map(function(k, i) {
+                                    if(k == val.toLowerCase()) {
+                                        var tmp = {};
+                                        tmp[key] = val;
+                                        valObj[k].push(tmp);
+                                        valExists = true;
+                                        dupCnt++;
+                                    }
+                                });
+                                if(!valExists) {
+                                    var tmp = {};
+                                    tmp[key] = val;
+                                    valObj[val.toLowerCase()] = [ tmp ];
+                                    var x = key.substring(key.lastIndexOf('.')+1);
+                                    if(Object.keys(outJson).indexOf(x) > -1) {
+                                        while(Object.keys(outJson).indexOf(x) > -1) {
+                                            x = x + '1';
+                                        }
+                                    }
+                                    outJson[x] = val;
+                                }
+                            });
+                            document.getElementById('dupCntVal').innerHTML = dupCnt;
+                            var tmpValObj = Object.keys(valObj).map(function(k) { return { key: k, value: valObj[k] }; })
+                                    .sort(function(a, b) { return b.value.length - a.value.length; });
+                            Object.keys(tmpValObj).map(function(key, index) {
+                                var tr = document.createElement('tr');
+                                tr.innerHTML="<td>"+tmpValObj[key].key+"</td><td><pre>"+JSON.stringify(tmpValObj[key].value, null, 4)+"</pre></td>";
+                                document.getElementById('output2').appendChild(tr);
+                            });
+                            document.getElementById('outJson').innerHTML = JSON.stringify(outJson, null, 4);
+                        } catch (error) {
+                            console.log(error);
+                        }
+                    });
+                }
+            }
+            
+            function flatten(data) {
+                var result = {};
+                function recurse (cur, prop) {
+                    if (Object(cur) !== cur) {
+                        result[prop] = cur;
+                    } else if (Array.isArray(cur)) {
+                        for(var i=0, l=cur.length; i<l; i++)
+                            recurse(cur[i], prop + "[" + i + "]");
+                        if (l == 0)
+                            result[prop] = [];
+                    } else {
+                        var isEmpty = true;
+                        for (var p in cur) {
+                            isEmpty = false;
+                            recurse(cur[p], prop ? prop+"."+p : p);
+                        }
+                        if (isEmpty && prop)
+                            result[prop] = {};
+                    }
+                }
+                recurse(data, "");
+                return result;
+            }
+        </script>
+    </head>
+    <body>
+        <input id="jsonUpload" type="file" onchange="uploadJSON()" />
+        <br /><br />
+        <button onclick="toggle('output')">Show/Hide</button>
+        <table id="output" border="1"></table>
+        <br /><br />
+        <div>Total duplicate strings = <span id="dupCntVal"></span></div>
+        <br />
+        <button onclick="toggle('output2')">Show/Hide</button>
+        <table id="output2" border="1"></table>
+        <br /><br />
+        <script id="outJson" type="text/plain" style="display: block;">
+
+        </script>
+    </body>
+</html>
