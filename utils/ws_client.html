@@ -1,0 +1,214 @@
+<html>
+<head>
+<script>
+</script>
+</head>
+<body>
+	<div>
+        <span>Server IP </span>
+        <input type="text" id="serverIP" style="margin-left: 10px" value="127.0.0.1" />
+		<span>Port </span>
+        <input type="text" id="serverPort" style="margin-left: 10px" value="8100" />
+        <input type="button" id="send" value="Start" style="margin-left: 10px" onclick="setupClient();" />
+    </div>
+	<br /><br />
+	<div>
+		<button id="switchPTZBtn" onclick="switchPTZ(this)">Run PTZ</button>
+		<button id="switchPTZBtn" onclick="getCameras(this)">Cameras</button>
+	</div>
+	<br /><br />
+	<div>
+		<div>Command Log</div>
+		<br />
+		<textarea id="cmdLog" name="textarea" rows="21" cols="95" readonly="true"></textarea>
+		<br />
+		<button onclick="clearLog()">Clear Log</button>
+	</div>
+	<script>
+		var client = null;
+		var serverIp = "", serverPort = 80,
+			deviceKey = "m4kr",
+			serverTimeDiff = 0;
+		var ts_enabled = false;
+
+		function setupClient() {
+			serverIp = document.getElementById("serverIP").value.trim();
+			serverPort = document.getElementById("serverPort").value.trim();
+			if (serverIp == "" || serverPort == "")
+				return;
+			
+			if (client != null) {
+				client.close();
+				client = null;
+			}
+
+			var obj = {
+				subscribe: {
+					type: "client",
+					name: "test_page_" + random(10, 9999),
+					cameras: random(1, 10)
+				}
+			};
+			sendCommand(JSON.stringify(obj));
+		}
+
+		function random(min, max) {
+			return Math.floor(Math.random() * (max - min)) + min;
+		}
+		
+		function enableTimestamp(status) {
+			ts_enabled = status;
+		}
+
+		function getEpochInMicro(isCurTS) {
+			if (isCurTS)
+				return (((new Date()).getTime() - serverTimeDiff - (5000 + 1500)) * 1000);
+			else
+				return 0;
+		}
+
+		function sendCommand(msg){
+			try{
+				var obj = JSON.parse(msg);
+				if(client==null)
+					client = new WSClient("ws://"+serverIp+":"+serverPort+"/main");
+				client.send(JSON.stringify(obj));
+			}catch(e){
+				console.log("Client : Invalid JSON Command.");
+				//appendLog("Client : Invalid JSON Command.");
+			}   
+		}
+		
+		function getCameras() {
+			var obj = {
+				"CMD": "getCameras"
+			};
+			sendCommand(JSON.stringify(obj));
+		}
+		
+		function getPTZCmd(pan, tilt, zoom, s) {
+			var obj = {
+				"CMD": "P",
+				"AT": getEpochInMicro(true),
+				"VALUE": {
+					"p": pan,
+					"t": tilt,
+					"z": zoom,
+					"s": s
+				}
+			};
+			return JSON.stringify(obj);
+		}
+		
+		var autoPtz = false;
+
+		function switchPTZ(ele) {
+			switch (ele.innerHTML) {
+				case "Home":
+					document.getElementById("switchPTZBtn").innerHTML = "Run PTZ";
+					autoPtz = false;
+					sendCommand(getPTZCmd(1, 1, 1));
+					break;
+				case "Run PTZ":
+					ele.innerHTML = "Stop PTZ";
+					autoPtz = true;
+					runPanTiltZoom();
+					break;
+				case "Stop PTZ":
+					ele.innerHTML = "Run PTZ";
+					autoPtz = false;
+					break;
+			}
+		}
+
+		var panCnt = 0.33;
+
+		function runPanTiltZoom() {
+			if (panCnt.toFixed(1) == 1.0) {
+				panCnt = 0.33;
+				if (autoPtz)
+					runPanTiltZoom();
+			} else {
+				sendCommand(getPTZCmd(0.5, 0.5, panCnt));
+				panCnt = panCnt + 0.002;
+				if (autoPtz)
+					setTimeout(runPanTiltZoom, 50);
+			}
+		}
+
+		var WSClient = function(wsUrl){
+			var m_wsUrl, bConnected = false;
+			m_wsUrl = wsUrl;
+			
+			function connect(msg) {
+				try 
+				{
+					conObj = new WebSocket(m_wsUrl);
+					conObj.onopen = function() {
+						bConnected = true;
+						console.log("WS : Connected");
+						if (msg != "") {
+							conObj.send(msg); // send at construction.
+							appendLog("Sent : ", msg);
+						}
+					};
+					conObj.onerror = function(error) {
+						console.log("WS : Not Connected");
+						bConnected = false;
+					};
+
+					conObj.onmessage = function(e) {
+						appendLog("Received : ", e.data);
+					};
+
+					conObj.onclose = function() {
+						console.log("WS : Connection Closed");
+						bConnected = false;
+						delete connection;
+						client = null;
+					};
+				} catch (e) {
+					console.log(e.message);
+				}
+			}
+		   
+			this.send = function (msg) {
+				if (!bConnected) {
+					connect(msg);
+				}
+				else {
+					conObj.send(msg);
+					appendLog("Sent : ", msg);
+				}
+			};
+
+			this.close = function(){
+				conObj.onclose = function () {};
+				conObj.close();
+				bConnected = false;
+			};
+		};
+		
+		function appendLog(type, msg) {
+			try {
+				var obj = null;
+				if (typeof msg === 'string')
+					obj = JSON.parse(msg);
+				if (typeof msg === 'object')
+					obj = msg;
+				
+				var lines = document.getElementById('cmdLog').value.split('\n');
+				if (lines.length >= 100)
+					lines.splice(0, 1);
+				document.getElementById('cmdLog').value = lines.join("\n") + type + (msg ? msg : "") + "\n";
+			} catch (ex) {
+				console.log(ex);
+			}
+		}
+
+		function clearLog() {
+			document.getElementById('cmdLog').value = "";
+		}
+	</script>
+</body>
+</html>
