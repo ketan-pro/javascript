@@ -1,36 +1,41 @@
 <html>
     <head>
+        <link rel="stylesheet" type="text/css" href="css/index.css" />
+        <script type="text/javascript" src="js/utils.js"></script>
         <script>
             function toggle(id) {
                 var ele = document.getElementById(id);
                 ele.style.display = ele.style.display == 'none'? '' : 'none';
             }
-            function getAsText(readFile, cb) {
-                var reader = new FileReader();
-                reader.readAsText(readFile, "UTF-8");
-                reader.onload = function(evt) {
-                    var fileString = evt.target.result;
-                    cb(fileString);
-                };
-            }
-            
+            var cache = {
+                mainObj: {},
+                flatObj: {},
+                trimObj: {},
+                oldEnObj: {},
+                langObj: {},
+                newLangObj: {},
+                orgFileName: "",
+                langFileName: ""
+            };
             function uploadJSON() {
-                var outJson = {};
                 var file = document.getElementById('jsonUpload').files[0];
                 if (file) {
-                    getAsText(file, function(data) {
+                    cache.orgFileName = file.name;
+                    util.file.readText(file, function(data) {
                         try {
                             document.getElementById('output').innerHTML="";
                             document.getElementById('output2').innerHTML="";
+                            document.getElementById('outJson').innerHTML="";
                             var dupCnt = 0;
-                            var obj = JSON.parse(data);
-                            var flatObj = flatten(obj);
+                            cache.mainObj = JSON.parse(data);
+                            cache.flatObj = util.json.flatten(cache.mainObj);
+                            document.getElementById('exportBtn1').disabled = false;
                             var valObj = {};
-                            Object.keys(flatObj).map(function(key, index) {
+                            Object.keys(cache.flatObj).map(function(key, index) {
                                 var tr = document.createElement('tr');
-                                tr.innerHTML="<td>"+key+"</td><td>"+flatObj[key]+"</td>";
+                                tr.innerHTML="<td>"+(index+1)+"</td><td>"+key+"</td><td>"+cache.flatObj[key]+"</td>";
                                 document.getElementById('output').appendChild(tr);
-                                var val = flatObj[key];
+                                var val = cache.flatObj[key];
                                 var valExists = false;
                                 Object.keys(valObj).map(function(k, i) {
                                     if(k == val.toLowerCase()) {
@@ -46,12 +51,12 @@
                                     tmp[key] = val;
                                     valObj[val.toLowerCase()] = [ tmp ];
                                     var x = key.substring(key.lastIndexOf('.')+1);
-                                    if(Object.keys(outJson).indexOf(x) > -1) {
-                                        while(Object.keys(outJson).indexOf(x) > -1) {
+                                    if(Object.keys(cache.trimObj).indexOf(x) > -1) {
+                                        while(Object.keys(cache.trimObj).indexOf(x) > -1) {
                                             x = x + '1';
                                         }
                                     }
-                                    outJson[x] = val;
+                                    cache.trimObj[x] = val;
                                 }
                             });
                             document.getElementById('dupCntVal').innerHTML = dupCnt;
@@ -59,55 +64,127 @@
                                     .sort(function(a, b) { return b.value.length - a.value.length; });
                             Object.keys(tmpValObj).map(function(key, index) {
                                 var tr = document.createElement('tr');
-                                tr.innerHTML="<td>"+tmpValObj[key].key+"</td><td><pre>"+JSON.stringify(tmpValObj[key].value, null, 4)+"</pre></td>";
+                                tr.innerHTML="<td>"+tmpValObj[key].key+"</td><td><pre>"+ util.json.print(tmpValObj[key].value)+"</pre></td>";
                                 document.getElementById('output2').appendChild(tr);
                             });
-                            document.getElementById('outJson').innerHTML = JSON.stringify(outJson, null, 4);
+                            document.getElementById('outJson').innerHTML = util.json.print(cache.trimObj);
+                            document.getElementById('exportBtn2').disabled = false;
+                            document.getElementById("defaultOpen").click();
                         } catch (error) {
                             console.log(error);
                         }
                     });
                 }
             }
-            
-            function flatten(data) {
-                var result = {};
-                function recurse (cur, prop) {
-                    if (Object(cur) !== cur) {
-                        result[prop] = cur;
-                    } else if (Array.isArray(cur)) {
-                        for(var i=0, l=cur.length; i<l; i++)
-                            recurse(cur[i], prop + "[" + i + "]");
-                        if (l == 0)
-                            result[prop] = [];
-                    } else {
-                        var isEmpty = true;
-                        for (var p in cur) {
-                            isEmpty = false;
-                            recurse(cur[p], prop ? prop+"."+p : p);
+
+            function uploadSecJSON() {
+                var file = document.getElementById('jsonSecUpload').files[0];
+                if (file) {
+                    util.file.readText(file, function(data) {
+                        try { 
+                            cache.oldEnObj = JSON.parse(data);
+                        } catch (ex) {
+                            console.log(ex);
                         }
-                        if (isEmpty && prop)
-                            result[prop] = {};
-                    }
+                    });
                 }
-                recurse(data, "");
-                return result;
+            }
+
+            function uploadLangJSON() {
+                var file = document.getElementById('jsonLangUpload').files[0];
+                if (file) {
+                    cache.langFileName = file.name;
+                    util.file.readText(file, function(data) {
+                        try { 
+                            document.getElementById('output3').innerHTML="";
+                            cache.langObj = JSON.parse(data);
+                            var oldEnFlat = util.json.flatten(cache.oldEnObj); 
+                            var langFlat = util.json.flatten(cache.langObj);
+                            var mapObj = {};
+                            var newFlatLang = {};
+                            Object.keys(cache.flatObj).map(function(key, index) {
+                                mapObj[key] = {
+                                    val: cache.flatObj[key]
+                                };
+                                Object.keys(oldEnFlat).map(function(k, i) {
+                                    if((!mapObj[key].oldKey) && oldEnFlat[k] == mapObj[key].val) {
+                                        mapObj[key].oldKey = k;
+                                        newFlatLang[key] = langFlat[k]? langFlat[k] : mapObj[key].val;
+                                    }
+                                });
+                            });
+                            cache.newLangObj = util.json.unflatten(newFlatLang);
+                            
+                            Object.keys(mapObj).map(function(key, index) {
+                                var tr = document.createElement('tr');
+                                tr.innerHTML="<td>"+mapObj[key].val+"</td><td>"+key+"</td><td>"+mapObj[key].oldKey+"</td><td>"+newFlatLang[key]+"</td>";
+                                document.getElementById('output3').appendChild(tr);
+                            });
+                            document.getElementById('outLangJson').innerHTML = util.json.print(cache.newLangObj);
+                            document.getElementById('exportBtn').disabled = false;
+                        } catch (ex) {
+                            console.log(ex);
+                        }
+                    });
+                }
+            }
+            function dloadFlatFile() {
+                util.file.download('flat_'+cache.orgFileName, util.json.print(cache.flatObj));
+            }
+            function dloadTrimFile() {
+                util.file.download('trim_'+cache.orgFileName, util.json.print(cache.trimObj));
+            }
+            function dloadLangFile() {
+                util.file.download(cache.langFileName, util.json.print(cache.newLangObj));
+            }
+
+            function openTab(pageName, elmnt, color) {
+                var i, tabcontent, tablinks;
+                tabcontent = document.getElementsByClassName("tabcontent");
+                for (i = 0; i < tabcontent.length; i++) {
+                    tabcontent[i].style.display = "none";
+                }
+
+                tablinks = document.getElementsByClassName("tablink");
+                for (i = 0; i < tablinks.length; i++) {
+                    tablinks[i].style.backgroundColor = "";
+                }
+                document.getElementById(pageName).style.display = "block";
+                elmnt.style.backgroundColor = color;
             }
         </script>
     </head>
-    <body>
-        <input id="jsonUpload" type="file" onchange="uploadJSON()" />
+    <body><br />
+        <span>Upload EN JSON file : </span><input id="jsonUpload" type="file" onchange="uploadJSON()" />
         <br /><br />
-        <button onclick="toggle('output')">Show/Hide</button>
-        <table id="output" border="1"></table>
-        <br /><br />
-        <div>Total duplicate strings = <span id="dupCntVal"></span></div>
-        <br />
-        <button onclick="toggle('output2')">Show/Hide</button>
-        <table id="output2" border="1"></table>
-        <br /><br />
-        <script id="outJson" type="text/plain" style="display: block;">
-
-        </script>
+        <button class="tablink" onclick="openTab('Flatten', this, 'red')" id="defaultOpen">Flat JSON</button>
+        <button class="tablink" onclick="openTab('Duplicate', this, 'green')">Duplicates</button>
+        <button class="tablink" onclick="openTab('TrimJSON', this, 'blue')">Trimmed JSON</button>
+        <button class="tablink" onclick="openTab('ExportJSON', this, 'purple')">Export JSON</button>
+        
+        <div id="Flatten" class="tabcontent">
+            <button id="exportBtn1" disabled onclick="dloadFlatFile()">Export to JSON File</button>
+            <table id="output" border="1"></table>
+        </div>
+        
+        <div id="Duplicate" class="tabcontent">
+            <div>Total duplicate strings = <span id="dupCntVal"></span></div>
+            <br />
+            <table id="output2" border="1"></table>
+        </div>
+        
+        <div id="TrimJSON" class="tabcontent">
+            <button id="exportBtn2" disabled onclick="dloadTrimFile()">Export to JSON File</button>
+            <pre id="outJson" type="text/plain" style="display: block;"></pre>
+        </div>
+        
+        <div id="ExportJSON" class="tabcontent">
+            <span>Upload old EN JSON file : </span><input id="jsonSecUpload" type="file" onchange="uploadSecJSON()" />
+            <span>Upload lang JSON file : </span><input id="jsonLangUpload" type="file" onchange="uploadLangJSON()" />
+            <button id="exportBtn" disabled onclick="dloadLangFile()">Export to JSON File</button>
+            <br />
+            <table id="output3" border="1" style="width: 100%"></table>
+            <pre id="outLangJson" type="text/plain" style="display: block;"></pre>
+        </div>        
     </body>
 </html>
