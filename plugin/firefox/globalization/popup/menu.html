@@ -1,0 +1,20 @@
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <link rel="stylesheet" href="css/menu.css">
+        <script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
+        <script type="text/javascript" src="js/download.min.js"></script>
+        <script type="text/javascript" src="js/menu.js"></script>
+    </head>
+    <body>
+        <div class="dropdown">
+            <div id="myDropdown" class="dropdown-content">
+              <a href="javascript:void(0)" onclick="takeScreenShot()">ScreenShot</a>
+              <a href="#" onclick="markAll()">Mark All</a>
+              <a href="#" onclick="uploadXls()">Upload XLS</a>
+            </div>
+        </div>
+        <input type="file" onChange='uploadXls(this.files)' />
+    </body>
+    
+</html>
