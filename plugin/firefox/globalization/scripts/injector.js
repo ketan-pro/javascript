@@ -17,6 +17,8 @@
     browser.runtime.onMessage.addListener((message) => {
       if (message.command === "markAll") {
         markText(document.body);
+      } else if (message.command === "save_strings") {
+        saveUploadedStrings(message.data);
       }
     });
   

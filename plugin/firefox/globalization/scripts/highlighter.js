@@ -1,7 +1,8 @@
 let stringList = new Map();
-stringList.set("FireFox", "FireFox");
-stringList.set("apple", "apple");
-stringList.set("Window", "Window");
+
+function saveUploadedStrings(data) {
+  console.log(data);
+}
 
 function markText(node) {
   if (node.nodeType === Node.TEXT_NODE) {
