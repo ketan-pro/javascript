@@ -7,13 +7,44 @@ function takeScreenShot() {
     }, reportError);
 }
 
-function markAll() {
-    browser.tabs.query({ active: true, currentWindow: true })
-        .then(curTab => {
-            browser.tabs.sendMessage(curTab[0].id, {
-                command: "markAll"
+function markStrings(index) {
+    inject(() => {
+        browser.storage.local.get().then((results) => {
+            var lang = results.lang || 'en';
+            var arr = results && results[lang]? results[lang] : [];
+            if (index) {
+                arr = [ arr[index] ];
+            }
+            browser.tabs.query({ active: true, currentWindow: true })
+                .then(curTab => {
+                    browser.tabs.sendMessage(curTab[0].id, {
+                        command: "markAll",
+                        data: arr
+                    });
+                }).catch(reportError);
             });
-        }).catch(reportError);
+    });
+}
+
+function markAll() {
+    markStrings();
+}
+
+function markOne() {
+    var e = document.getElementById('dd_strings');
+    var i = e.options[e.selectedIndex].value;
+    markStrings(i);
+}
+
+function initPlugin() {
+    browser.storage.local.get().then((results) => {
+        reloadStringsDropDown(results);
+        document.getElementById('active_lang').value = results.lang || "en";
+    });
+}
+
+function selectLang(ele) {
+    browser.storage.local.set({ "lang": ele.options[ele.selectedIndex].value });
 }
 
 function uploadXls(fileList) {
@@ -24,7 +55,7 @@ function uploadXls(fileList) {
         if (regex.test(file.name.toLowerCase())) {
             if (typeof (FileReader) != "undefined") {
                 var reader = new FileReader();
- 
+
                 //For Browsers other than IE.
                 if (reader.readAsBinaryString) {
                     reader.onload = function (e) {
@@ -52,6 +83,21 @@ function uploadXls(fileList) {
     }
 }
 
+function storeData(obj) {
+    browser.storage.local.set(obj);
+    reloadStringsDropDown(obj);
+}
+
+function reloadStringsDropDown(obj) {
+    var dd = document.getElementById('dd_strings');
+    dd.innerHTML = null;
+    if (obj && obj.en) {
+        for (var i=0; i<obj.en.length; i++) {
+            dd.options.add(new Option(obj.en[i], i, false, false));
+        }
+    }    
+}
+
 function ProcessExcel(data) {
     var workbook = XLSX.read(data, {
         type: 'binary'
@@ -59,15 +105,22 @@ function ProcessExcel(data) {
 
     var firstSheet = workbook.SheetNames[0];
     var excelRows = XLSX.utils.sheet_to_row_object_array(workbook.Sheets[firstSheet]);
-    
-    browser.tabs.query({ active: true, currentWindow: true })
-        .then(curTab => {
-            browser.tabs.sendMessage(curTab[0].id, {
-                command: "save_strings",
-                data: excelRows
-            });
-        }).catch(reportError);
+
+    var xlsObj = {
+        en: [],
+        ja: [],
+        zh: []
+    };
+    for(var i=0; i<excelRows.length; i++) {
+        xlsObj.en[i] = excelRows[i].Source;
+        xlsObj.ja[i] = excelRows[i].Target_ja;
+        xlsObj.zh[i] = excelRows[i].Target_sc;   
+    }
+    storeData(xlsObj);
 };
 
-browser.tabs.executeScript({ file: "/scripts/highlighter.js" });
-browser.tabs.executeScript({ file: "/scripts/injector.js" });
+function inject(cb) {
+    browser.tabs.executeScript({ file: "/scripts/highlighter.js" }).then(()=> {
+        browser.tabs.executeScript({ file: "/scripts/injector.js" }).then(cb);
+    });    
+}

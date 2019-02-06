@@ -3,12 +3,20 @@
     "name": "Globalization",
     "version": "1.0",
     "description": "Globalization extension to mark selected strings and take screenshots.",
-    "browser_action": {
+    "commands": {
+        "_execute_sidebar_action": {
+            "suggested_key": {
+                "default": "Alt+Ctrl+G"
+            }
+        }
+    },
+    "sidebar_action": {
         "default_icon": {
-          "38": "globe.jpg"
+            "48": "globe.jpg"
         },
         "default_title": "Globalization",
-        "default_popup": "popup/menu.html"
+        "default_panel": "popup/menu.html",
+        "open_at_install":true
     },
     "permissions": [
     "activeTab",

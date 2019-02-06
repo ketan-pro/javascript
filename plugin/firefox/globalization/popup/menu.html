@@ -7,15 +7,24 @@
         <script type="text/javascript" src="js/download.min.js"></script>
         <script type="text/javascript" src="js/menu.js"></script>
     </head>
-    <body>
+    <body onload="initPlugin()">
         <div class="dropdown">
             <div id="myDropdown" class="dropdown-content">
-              <a href="javascript:void(0)" onclick="takeScreenShot()">ScreenShot</a>
-              <a href="#" onclick="markAll()">Mark All</a>
-              <a href="#" onclick="uploadXls()">Upload XLS</a>
+                <a href="javascript:void(0)">
+                    <select id="active_lang" style="max-width: 100%" onchange="selectLang(this)">
+                        <option value="en">English</option>
+                        <option value="ja">Japanese</option>
+                        <option value="zh">Chinese</option>
+                    </select>
+                </a>
+                <a href="#" onclick="document.getElementById('xls_upload_ctrl').click()">Upload XLS</a>
+                <a href="javascript:void(0)"><select id="dd_strings" style="max-width: 100%"></select></a>
+                <a href="#" onclick="markOne()">Mark</a>
+                <a href="#" onclick="markAll()">Mark All</a>
+                <a href="javascript:void(0)" onclick="takeScreenShot()">ScreenShot</a>    
             </div>
+            <input id='xls_upload_ctrl' type="file" onchange="uploadXls(this.files)" style="display:none" /> 
         </div>
-        <input type="file" onChange='uploadXls(this.files)' />
     </body>
     
 </html>
