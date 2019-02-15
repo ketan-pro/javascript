@@ -1,30 +1,30 @@
+<!DOCTYPE html>
 <html>
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
         <link rel="stylesheet" href="css/menu.css">
-        <script type="text/javascript" src="js/jquery-3.3.1.min.js"></script>
         <script type="text/javascript" src="js/xlsx-0.14.1.full.min.js"></script>
         <script type="text/javascript" src="js/download.min.js"></script>
-        <script type="text/javascript" src="js/menu.js"></script>
     </head>
-    <body onload="initPlugin()">
+    <body id="page_body">
         <div class="dropdown">
             <div id="myDropdown" class="dropdown-content">
                 <a href="javascript:void(0)">
-                    <select id="active_lang" style="max-width: 100%" onchange="selectLang(this)">
+                    <select id="active_lang" style="max-width: 100%">
                         <option value="en">English</option>
                         <option value="ja">Japanese</option>
                         <option value="zh">Chinese</option>
                     </select>
                 </a>
-                <a href="#" onclick="document.getElementById('xls_upload_ctrl').click()">Upload XLS</a>
+                <a href="javascript:void(0)" id="upload_xls">Upload XLS</a>
                 <a href="javascript:void(0)"><select id="dd_strings" style="max-width: 100%"></select></a>
-                <a href="#" onclick="markOne()">Mark</a>
-                <a href="#" onclick="markAll()">Mark All</a>
-                <a href="javascript:void(0)" onclick="takeScreenShot()">ScreenShot</a>    
+                <a href="javascript:void(0)" id="mark_str">Mark</a>
+                <a href="javascript:void(0)" id="mark_all">Mark All</a>
+                <a href="javascript:void(0)" id="screen_shot">ScreenShot</a>    
             </div>
-            <input id='xls_upload_ctrl' type="file" onchange="uploadXls(this.files)" style="display:none" /> 
+            <input id='xls_upload_ctrl' type="file" style="display:none" /> 
         </div>
+        <script type="text/javascript" src="js/menu.js"></script>
     </body>
     
 </html>

@@ -43,11 +43,13 @@ function initPlugin() {
     });
 }
 
-function selectLang(ele) {
+function selectLang() {
+    var ele = document.getElementById('active_lang');
     browser.storage.local.set({ "lang": ele.options[ele.selectedIndex].value });
 }
 
-function uploadXls(fileList) {
+function uploadXls() {
+    var fileList = document.getElementById('xls_upload_ctrl').files;
     for (i = 0; i < fileList.length; i++) {
         var file = fileList[i];
 
@@ -118,9 +120,19 @@ function ProcessExcel(data) {
     }
     storeData(xlsObj);
 };
-
+function uploadFile() {
+    document.getElementById('xls_upload_ctrl').click();
+}
 function inject(cb) {
     browser.tabs.executeScript({ file: "/scripts/highlighter.js" }).then(()=> {
         browser.tabs.executeScript({ file: "/scripts/injector.js" }).then(cb);
     });    
 }
+
+document.getElementById('page_body').addEventListener("load", initPlugin, false);
+document.getElementById('active_lang').addEventListener("change", selectLang, false);
+document.getElementById('upload_xls').addEventListener("click", uploadFile, false);
+document.getElementById('mark_str').addEventListener("click", markOne, false);
+document.getElementById('mark_all').addEventListener("click", markAll, false);
+document.getElementById('screen_shot').addEventListener("click", takeScreenShot, false);
+document.getElementById('xls_upload_ctrl').addEventListener("change", uploadXls, false);
