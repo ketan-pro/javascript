@@ -9,7 +9,6 @@
   }
   window.injector = true;
 
-
   browser.runtime.onMessage.addListener((message) => {
     if (message.command === "markAll") {
       fillStringList(message.data);

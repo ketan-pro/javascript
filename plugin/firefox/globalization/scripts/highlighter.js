@@ -6,7 +6,10 @@
 
   let stringList = new Map();
   stringList.set("firefox", "firefox");
-
+  stringList.set("google", "google");
+  stringList.set("microsoft", "microsoft");
+  stringList.set("iframe", "iframe");
+  
   window.fillStringList = function(strArr) {
     stringList.clear();
     for (var i = 0; i < strArr.length; i++) {
@@ -15,14 +18,29 @@
   }
 
   window.markText = function(node) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      let content = node.textContent;
-
+    if(node.tagName == "IFRAME") {
+      return markText(node.contentDocument.documentElement);
+    }
+    if (node.placeholder || node.nodeType === Node.TEXT_NODE || node.tagName == "SELECT") {
       for (let [key, val] of stringList) {
-        if (content.toLowerCase().includes(key.toLowerCase())) {
+        var str = key.toLowerCase();
+        if (node.placeholder) {
+          if(node.placeholder.toLowerCase().includes(str) && !node.value) {
+            node.style.border = "4px solid red";
+          }          
+        }
+        if (node.tagName == "SELECT") {
+          for (let child of node.children) {
+            if (child.textContent.toLowerCase().includes(str)) {
+              child.parentNode.style.border = "2px solid red";
+              child.style.color = "red";
+            }
+          }
+        }
+        else if (str && node.textContent.toLowerCase().includes(str)) {
           //node.parentNode.style.background = "yellow";
           node.parentNode.style.border = "4px solid red";
-        }
+        } 
       }
     }
     else {

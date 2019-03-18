@@ -37,6 +37,13 @@ function markOne() {
 }
 
 function initPlugin() {
+    browser.commands.onCommand.addListener((command) => {
+        console.log(command);
+        if (command === 'take-screenshot') {
+            takeScreenShot();   
+        }
+    });
+
     browser.storage.local.get().then((results) => {
         reloadStringsDropDown(results);
         document.getElementById('active_lang').value = results.lang || "en";
@@ -128,6 +135,12 @@ function inject(cb) {
         browser.tabs.executeScript({ file: "/scripts/injector.js" }).then(cb);
     });    
 }
+
+browser.runtime.onMessage.addListener((msg) => {
+    if(msg.command == "screen_capture") {
+        takeScreenShot();
+    }
+});
 
 document.getElementById('page_body').addEventListener("load", initPlugin, false);
 document.getElementById('active_lang').addEventListener("change", selectLang, false);
