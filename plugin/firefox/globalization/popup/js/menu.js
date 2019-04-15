@@ -1,13 +1,51 @@
 function reportError(error) {
     console.error(`Could not run: ${error}`);
 }
+
+function dataURItoBlob(dataURI, callback) {
+    var byteString = atob(dataURI.split(',')[1]);
+    var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0]
+
+    // write the bytes of the string to an ArrayBuffer
+    var ab = new ArrayBuffer(byteString.length);
+    var ia = new Uint8Array(ab);
+    for (var i = 0; i < byteString.length; i++) {
+        ia[i] = byteString.charCodeAt(i);
+    }
+
+    // write the ArrayBuffer to a blob, and you're done
+    var bb = new Blob([ab], {type: mimeString});
+    return bb;
+}
+
 function takeScreenShot() {
     browser.tabs.captureVisibleTab().then((imgUrl) => {
-        download(imgUrl, 'screen_' + (new Date().getMilliseconds()) + '.png', 'image/png');
+        //download(imgUrl, 'screen_' + (new Date().getMilliseconds()) + '.png', 'image/png');
+        var imgBlob = dataURItoBlob(imgUrl);
+        browser.storage.local.get().then((results) => {
+            var filePath = "";
+            filePath += results.xls_file_name? ('/' + results.xls_file_name) : '';
+            filePath += results.lang? ('/' + results.lang) : '';
+            var tmp = document.getElementById('screenshot_filename').value;
+            tmp = tmp.lastIndexOf('.')>0? tmp.substring(0, tmp.lastIndexOf('.')) : tmp;
+            filePath += '/' + (tmp? tmp: (results.selected_str_idx? results.selected_str_idx: '0'));
+            filePath = (filePath[0] == '/'? filePath.substring(1) : filePath ) + '.png';
+            browser.downloads.download({
+                url: URL.createObjectURL(imgBlob),
+                filename: filePath,
+                saveAs: true
+            });            
+        });
     }, reportError);
 }
 
 function markStrings(index) {
+    var markerObj = {
+        color: document.querySelector('input[name="marker_color"]:checked').value,
+        size: document.getElementById('marker_dd').value,
+        matchFullStr: document.querySelector('input[name="match_type"]:checked').value == 'full'
+    };
+    
     inject(() => {
         browser.storage.local.get().then((results) => {
             var lang = results.lang || 'en';
@@ -15,11 +53,15 @@ function markStrings(index) {
             if (index) {
                 arr = [ arr[index] ];
             }
+            index = index? index : 0;
+            browser.storage.local.set({ "selected_str_idx": index });
+            document.getElementById('screenshot_filename').value = index + '.png';
             browser.tabs.query({ active: true, currentWindow: true })
                 .then(curTab => {
                     browser.tabs.sendMessage(curTab[0].id, {
                         command: "markAll",
-                        data: arr
+                        data: arr,
+                        marker: markerObj
                     });
                 }).catch(reportError);
             });
@@ -36,27 +78,23 @@ function markOne() {
     markStrings(i);
 }
 
-function initPlugin() {
-    browser.commands.onCommand.addListener((command) => {
-        console.log(command);
-        if (command === 'take-screenshot') {
-            takeScreenShot();   
-        }
-    });
-
-    browser.storage.local.get().then((results) => {
-        reloadStringsDropDown(results);
-        document.getElementById('active_lang').value = results.lang || "en";
-    });
-}
-
 function selectLang() {
     var ele = document.getElementById('active_lang');
     browser.storage.local.set({ "lang": ele.options[ele.selectedIndex].value });
 }
 
+function selectMarkerSize() {
+    var ele = document.getElementById('marker_dd');
+    browser.storage.local.set({ "marker_size": ele.options[ele.selectedIndex].value });
+}
+
 function uploadXls() {
     var fileList = document.getElementById('xls_upload_ctrl').files;
+    if (fileList.length > 0) {
+        var fname = fileList[0].name.substring(0, fileList[0].name.lastIndexOf('.'));
+        browser.storage.local.set({ "xls_file_name": fname });
+    }
+    
     for (i = 0; i < fileList.length; i++) {
         var file = fileList[i];
 
@@ -136,14 +174,34 @@ function inject(cb) {
     });    
 }
 
+function initPlugin() {
+    browser.commands.onCommand.addListener((command) => {
+        console.log(command);
+        if (command === 'take-screenshot') {
+            takeScreenShot();   
+        }
+    });
+
+    browser.storage.local.get().then((results) => {
+        reloadStringsDropDown(results);
+        if (!results.lang) {
+            results.lang = 'en';
+            browser.storage.local.set({ "lang": results.lang });
+        }
+        document.getElementById('active_lang').value = results.lang;
+    });
+}
+
 browser.runtime.onMessage.addListener((msg) => {
     if(msg.command == "screen_capture") {
         takeScreenShot();
     }
 });
 
-document.getElementById('page_body').addEventListener("load", initPlugin, false);
+window.onload = initPlugin;
+//document.getElementById('page_body').addEventListener("load", initPlugin, false);
 document.getElementById('active_lang').addEventListener("change", selectLang, false);
+document.getElementById('marker_dd').addEventListener("change", selectMarkerSize, false);
 document.getElementById('upload_xls').addEventListener("click", uploadFile, false);
 document.getElementById('mark_str').addEventListener("click", markOne, false);
 document.getElementById('mark_all').addEventListener("click", markAll, false);

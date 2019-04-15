@@ -12,6 +12,7 @@
   browser.runtime.onMessage.addListener((message) => {
     if (message.command === "markAll") {
       fillStringList(message.data);
+      window.highlight_marker = message.marker;
       markText(document.body);
     }
   });

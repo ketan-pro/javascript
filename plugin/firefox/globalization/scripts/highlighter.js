@@ -22,24 +22,34 @@
       return markText(node.contentDocument.documentElement);
     }
     if (node.placeholder || node.nodeType === Node.TEXT_NODE || node.tagName == "SELECT") {
+      var marker_size = window.highlight_marker && window.highlight_marker.size?  window.highlight_marker.size : '2';
+      var marker_color = window.highlight_marker && window.highlight_marker.color?  window.highlight_marker.color : 'red';
+      var match_full = window.highlight_marker && window.highlight_marker.matchFullStr? window.highlight_marker.matchFullStr : false;
       for (let [key, val] of stringList) {
         var str = key.toLowerCase();
         if (node.placeholder) {
-          if(node.placeholder.toLowerCase().includes(str) && !node.value) {
-            node.style.border = "4px solid red";
+          var origStr = node.placeholder.trim().toLowerCase();
+          var status = match_full? (origStr == str) : origStr.includes(str);
+          if(status && !node.value) {
+            node.style.border = marker_size + "px solid " + marker_color;
           }          
         }
         if (node.tagName == "SELECT") {
           for (let child of node.children) {
-            if (child.textContent.toLowerCase().includes(str)) {
-              child.parentNode.style.border = "2px solid red";
-              child.style.color = "red";
+            var origStr = child.textContent.trim().toLowerCase();
+            var status = match_full? (origStr == str) : origStr.includes(str);
+            if (status) {
+              child.parentNode.style.border = marker_size + "px solid " + marker_color;
+              child.style.color = marker_color;
             }
           }
         }
-        else if (str && node.textContent.toLowerCase().includes(str)) {
-          //node.parentNode.style.background = "yellow";
-          node.parentNode.style.border = "4px solid red";
+        else if (str) {
+          var origStr = node.textContent.trim().toLowerCase();
+          var status = match_full? (origStr == str) : origStr.includes(str);
+          if(status) {
+            node.parentNode.style.border = marker_size + "px solid " + marker_color;
+          }
         } 
       }
     }

@@ -4,29 +4,78 @@
         <meta http-equiv="content-type" content="text/html; charset=utf-8" />
         <link rel="stylesheet" href="css/menu.css">
         <script type="text/javascript" src="js/xlsx-0.14.1.full.min.js"></script>
-        <script type="text/javascript" src="js/download.min.js"></script>
     </head>
     <body id="page_body">
-        <div class="dropdown">
-            <div id="myDropdown" class="dropdown-content">
-                <a href="javascript:void(0)">
-                    <select id="active_lang" style="max-width: 100%">
-                        <option value="en">English</option>
-                        <option value="ja">Japanese</option>
-                        <option value="zh">Chinese</option>
-                    </select>
-                </a>
-                <a href="javascript:void(0)" id="upload_xls">Upload XLS</a>
-                <a href="javascript:void(0)"><select id="dd_strings" style="max-width: 100%"></select></a>
-                <a href="javascript:void(0)" id="mark_str">Mark</a>
-                <a href="javascript:void(0)" id="mark_all">Mark All</a>
-                <a href="javascript:void(0)" id="screen_shot">ScreenShot</a>    
+        <fieldset class="ctrl-group">
+            <legend>Configuration</legend>
+            <div style="margin:10px 0px">
+                <span style="display: inline-block; width:80px">Language</span>
+                <select id="active_lang" style="max-width: 100%">
+                    <option value="en">English</option>
+                    <option value="ja">Japanese</option>
+                    <option value="zh">Chinese</option>
+                </select>
             </div>
-            <input id='xls_upload_ctrl' type="file" style="display:none" /> 
-        </div>
-        <footer style="position: absolute; bottom: 0px; padding: 20px">
-            <div>Alt+Ctrl+S : Take ScreenShot</div>
-            <div>Alt+Ctrl+G : Toggle Plugin</div>
+            <div style="text-align: center; margin: 10px 0px;">
+                <input id='xls_upload_ctrl' type="file" style="display:none" /> 
+                <button id="upload_xls" class="blue-button" style="margin-top: 10px;">Upload XLS File</button>
+            </div>
+        </fieldset>
+        <fieldset class="ctrl-group">
+            <legend>Marker</legend>
+            <div style="margin: 10px 0px;">
+                <span style="width: 50px; display: inline-block;">Size</span>
+                <select id="marker_dd" style="max-width: 100%">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+            </div>
+            <div id="choose_color" class="color_chooser">
+                <span style="position: relative; top: -10px; width: 50px; display: inline-block;">Color</span>
+                <label class="green">
+                    <input type="radio" name="marker_color" value="#49f149">
+                    <div class="button"><span></span></div>
+                </label>                
+                <label class="yellow">
+                    <input type="radio" name="marker_color" value="yellow">
+                    <div class="button"><span></span></div>
+                </label>                
+                <label class="red">
+                    <input type="radio" name="marker_color" value="red" checked>
+                    <div class="button"><span></span></div>
+                </label>
+            </div>            
+            <div style="margin: 10px 0px;max-width: 100%;"><select id="dd_strings" style="width: 100%"></select></div>
+            <div style="margin: 10px 0px;max-width: 100%;" class="match_type_parent">
+                <span style="display: inline-block;">Match</span>
+                <input type="radio" name="match_type" value="partial" checked />Partial
+                <input type="radio" name="match_type" value="full" />Full
+            </div>
+            <div>
+                <button id="mark_all" class="blue-button" style="margin: 10px">Mark All</button>
+                <button id="mark_str" class="blue-button" style="margin: 10px">Mark</button>
+            </div>
+        </fieldset>
+        <fieldset class="ctrl-group">
+            <legend>ScreenShot</legend>
+            <div style="margin: 10px 0px;">
+                <span>FileName:</span>
+                <input type="text" id="screenshot_filename" style="width:100%" />
+            </div>
+            <div style="text-align: center; ">
+                <button id="screen_shot" class="blue-button">Take Screenshot</button>
+            </div>
+        </fieldset>
+        <footer style="position: absolute; bottom: 10px; width: calc(100% - 20px);">
+            <fieldset class="ctrl-group">
+                <legend>Shortcut's</legend>
+                <div style="padding: 10px 0px">Alt+Ctrl+S : Take ScreenShot</div>
+                <div>Alt+Ctrl+G : Toggle Plugin</div>
+            </fieldset>
         </footer>
         <script type="text/javascript" src="js/menu.js"></script>
     </body>
